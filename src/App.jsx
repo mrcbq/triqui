@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState } from "react"
 import confetti from 'canvas-confetti'
 
 import { Square } from './components/Square'
@@ -8,13 +8,17 @@ import { checkEndGame, checkWinner } from './components/logic/board'
 import { WinnerModal } from './components/WinnerModal'
 
 function App () {
-  const [board, setBoard] = useState(()=>{
+  // console.log('render board');
+  const [board, setBoard] = useState( () => {
+    // console.log('inicializar estado del board'); //esto se hace aqui porque es lento y sincrono, ademas si se hace afuera se haria cada vez que se renderiza un componente.
     const boardFromStorage = window.localStorage.getItem('board')
-    if (boardFromStorage) return JSON.parse(boardFromStorage)
-    return initialBoard
+    return (boardFromStorage) ? JSON.parse(boardFromStorage) : initialBoard
   })
 
-  const [turn, setTurn] = useState(TURNS.X)
+  const [turn, setTurn] = useState(() => {
+    const turnFromStorage = window.localStorage.getItem('turn')
+    return JSON.parse(turnFromStorage) ?? TURNS.X
+  })
 
   const [winner, setWinner] = useState(null) // null means no winner, false means draw
 
@@ -22,26 +26,31 @@ function App () {
     setBoard(initialBoard)
     setTurn(TURNS.X)
     setWinner(null)
+
+    window.localStorage.removeItem('board')
+    window.localStorage.removeItem('turn')
   }
 
   const updateBoard = (index) => {
     if (board[index] || winner) return
 
-    const newTurn = turn === TURNS.X ? TURNS.O : TURNS.X
-    setTurn(newTurn)
-
     const newBoard = [...board]
     newBoard[index] = turn
     setBoard(newBoard)
-
+    
+    const newTurn = turn === TURNS.X ? TURNS.O : TURNS.X
+    setTurn(newTurn)
+    
     const newWinner = checkWinner(newBoard)
     if (newWinner) {
       confetti()
       setWinner(newWinner)
     } else if (checkEndGame(newBoard)) {
       setWinner(false)
-      console.log(winner)
     }
+
+    window.localStorage.setItem('board', JSON.stringify(newBoard))
+    window.localStorage.setItem('turn', JSON.stringify(newTurn))
   }
 
   return (
